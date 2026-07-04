@@ -7,14 +7,18 @@
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "test": "vitest run",
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "build:docker": "docker build -t password-strength-microservice .",
+    "dev:docker": "docker run -p 3000:3000 password-strength-microservice"
   },
   "dependencies": {
     "fastify": "^5.0.0",
-    "zod": "^3.25.0"
+    "zod": "^3.25.0",
+    "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
+    "@types/zxcvbn": "^4.4.5",
     "tsx": "^4.19.0",
     "typescript": "^5.8.0",
     "vitest": "^3.2.0"
