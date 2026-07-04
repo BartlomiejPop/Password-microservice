@@ -1,24 +1,5 @@
-export type PasswordStrengthLabel = 'very-weak' | 'weak' | 'fair' | 'good' | 'strong' | 'very-strong';
-
-export interface PasswordStrengthInput {
-  username: string;
-  email: string;
-  password: string;
-}
-
-export interface PasswordStrengthResult {
-  score: number;
-  label: PasswordStrengthLabel;
-  feedback: string[];
-  checks: {
-    length: boolean;
-    uppercase: boolean;
-    lowercase: boolean;
-    number: boolean;
-    symbol: boolean;
-    notCommon: boolean;
-  };
-}
+import zxcvbn from 'zxcvbn';
+import type { PasswordStrengthInput, PasswordStrengthResult, PasswordStrengthLabel } from './passwordStrength.types.js';
 
 const COMMON_PASSWORDS = new Set([
   'password',
@@ -64,8 +45,11 @@ function isCommonPassword(password: string): boolean {
 
 export function evaluatePasswordStrength(input: PasswordStrengthInput): PasswordStrengthResult {
   const password = input.password ?? '';
-  const username = normalize(input.username ?? '');
-  const email = normalize(input.email ?? '');
+  const username = input.username ?? '';
+  const email = input.email ?? '';
+  const normalizedUsername = normalize(username);
+  const normalizedEmail = normalize(email);
+  const zxcvbnResult = zxcvbn(password, [normalizedUsername, normalizedEmail, username, email]);
 
   const checks = {
     length: password.length >= 12,
@@ -73,51 +57,57 @@ export function evaluatePasswordStrength(input: PasswordStrengthInput): Password
     lowercase: /[a-z]/.test(password),
     number: /\d/.test(password),
     symbol: /[^\w\s]/.test(password),
-    notCommon: !isCommonPassword(password) && !containsUserInfo(password, username, email)
+    notCommon: !isCommonPassword(password) && !containsUserInfo(password, normalizedUsername, normalizedEmail)
   };
 
-  let score = 0;
+  let score = zxcvbnResult.score * 16;
 
   if (password.length >= 16) {
-    score += 30;
+    score += 8;
   } else if (password.length >= 12) {
-    score += 30;
+    score += 6;
   } else if (password.length >= 8) {
-    score += 18;
-  } else if (password.length >= 6) {
-    score += 10;
+    score += 3;
   }
 
   if (checks.uppercase) {
-    score += 10;
+    score += 2;
   }
   if (checks.lowercase) {
-    score += 10;
+    score += 2;
   }
   if (checks.number) {
-    score += 10;
+    score += 2;
   }
   if (checks.symbol) {
-    score += 10;
+    score += 2;
   }
 
   if (checks.notCommon) {
-    score += 10;
+    score += 5;
   }
 
-  if (containsUserInfo(password, username, email)) {
-    score -= 20;
+  if (containsUserInfo(password, normalizedUsername, normalizedEmail)) {
+    score -= 16;
   }
   if (isCommonPassword(password)) {
     score -= 15;
   }
   if (hasRepeatedCharacters(password)) {
-    score -= 5;
+    score -= 4;
   }
 
   score = Math.max(0, Math.min(100, score));
 
   const feedback: string[] = [];
+  if (zxcvbnResult.feedback.warning) {
+    feedback.push(zxcvbnResult.feedback.warning);
+  }
+  for (const suggestion of zxcvbnResult.feedback.suggestions) {
+    if (suggestion) {
+      feedback.push(suggestion);
+    }
+  }
   if (password.length < 8) {
     feedback.push('Use at least 8 characters.');
   }
@@ -133,7 +123,7 @@ export function evaluatePasswordStrength(input: PasswordStrengthInput): Password
   if (!checks.symbol) {
     feedback.push('Add at least one symbol.');
   }
-  if (containsUserInfo(password, username, email)) {
+  if (containsUserInfo(password, normalizedUsername, normalizedEmail)) {
     feedback.push('Avoid using your username or email in the password.');
   }
   if (isCommonPassword(password)) {
@@ -142,6 +132,8 @@ export function evaluatePasswordStrength(input: PasswordStrengthInput): Password
   if (hasRepeatedCharacters(password)) {
     feedback.push('Avoid repeated character sequences.');
   }
+
+  const uniqueFeedback = feedback.filter((item, index) => feedback.indexOf(item) === index);
 
   let label: PasswordStrengthLabel = 'very-weak';
   if (score >= 90) {
@@ -159,7 +151,7 @@ export function evaluatePasswordStrength(input: PasswordStrengthInput): Password
   return {
     score,
     label,
-    feedback,
+    feedback: uniqueFeedback,
     checks
   };
 }
