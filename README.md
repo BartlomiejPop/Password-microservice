@@ -4,7 +4,7 @@ A small Fastify + TypeScript microservice that evaluates password strength and r
 
 ## Endpoint
 
-POST /api/v1/password-strength
+POST /passwordStrength
 
 Example request:
 
@@ -77,16 +77,10 @@ The resulting score is mapped to a label:
    ```
 4. Send a request
    ```bash
-   curl -X POST http://127.0.0.1:3000/api/v1/password-strength \
+   curl -X POST http://127.0.0.1:3000/passwordStrength \
      -H 'Content-Type: application/json' \
      -d '{"username":"okenobi","email":"o.kenobi@jedi-council.com","password":"JediMaster42!"}'
    ```
-
-## Production build
-
-```bash
-npm run build
-```
 
 ## Docker
 

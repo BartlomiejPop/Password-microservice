@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 
 describe('Password Strength Routes', () => {
-  it('POST /api/v1/password-strength with valid payload returns score and label', async () => {
+  it('POST /passwordStrength with valid payload returns score and label', async () => {
     const app = buildApp();
 
     const response = await app.inject({
       method: 'POST',
-      url: '/api/v1/password-strength',
+      url: '/passwordStrength',
       payload: {
         username: 'testuser',
         email: 'test@example.com',
@@ -26,12 +26,12 @@ describe('Password Strength Routes', () => {
     });
   });
 
-  it('POST /api/v1/password-strength with missing fields returns 400', async () => {
+  it('POST /passwordStrength with missing fields returns 400', async () => {
     const app = buildApp();
 
     const response = await app.inject({
       method: 'POST',
-      url: '/api/v1/password-strength',
+      url: '/passwordStrength',
       payload: {
         username: 'testuser'
       }
@@ -45,12 +45,12 @@ describe('Password Strength Routes', () => {
     });
   });
 
-  it('POST /api/v1/password-strength with invalid email returns 400', async () => {
+  it('POST /passwordStrength with invalid email returns 400', async () => {
     const app = buildApp();
 
     const response = await app.inject({
       method: 'POST',
-      url: '/api/v1/password-strength',
+      url: '/passwordStrength',
       payload: {
         username: 'testuser',
         email: 'invalid-email',
@@ -63,12 +63,12 @@ describe('Password Strength Routes', () => {
     expect(body.error).toBe('invalid_request');
   });
 
-  it('POST /api/v1/password-strength with weak password returns low score', async () => {
+  it('POST /passwordStrength with weak password returns low score', async () => {
     const app = buildApp();
 
     const response = await app.inject({
       method: 'POST',
-      url: '/api/v1/password-strength',
+      url: '/passwordStrength',
       payload: {
         username: 'testuser',
         email: 'test@example.com',
