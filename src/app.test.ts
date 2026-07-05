@@ -22,7 +22,7 @@ describe('HTTP routes', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/api/v1/password-strength',
+      url: '/passwordStrength',
       payload: {
         username: 'okenobi',
         email: 'o.kenobi@jedi-council.com',

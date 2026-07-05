@@ -9,7 +9,7 @@ const passwordStrengthRequestSchema = z.object({
 });
 
 export async function passwordStrengthRoutes(app: FastifyInstance): Promise<void> {
-  app.post('/api/v1/password-strength', async (request, reply) => {
+  app.post('/passwordStrength', async (request, reply) => {
     const parsed = passwordStrengthRequestSchema.safeParse(request.body);
 
     if (!parsed.success) {
