@@ -1,6 +1,28 @@
 import zxcvbn from 'zxcvbn';
 import type { PasswordStrengthInput, PasswordStrengthResult, PasswordStrengthLabel } from './passwordStrength.types.js';
 
+const ZXCVM_SCORE_MULTIPLIER = 16;
+const SCORE_MIN = 0;
+const SCORE_MAX = 100;
+const MIN_PASSWORD_LENGTH = 8;
+const RECOMMENDED_PASSWORD_LENGTH = 12;
+const STRONG_PASSWORD_LENGTH = 16;
+const REPEATED_SEQUENCE_LENGTH = 3;
+const MIN_USER_INFO_TOKEN_LENGTH = 3;
+const UPPERCASE_SCORE = 2;
+const LOWERCASE_SCORE = 2;
+const NUMBER_SCORE = 2;
+const SYMBOL_SCORE = 2;
+const NOT_COMMON_SCORE = 5;
+const USER_INFO_PENALTY = 16;
+const COMMON_PASSWORD_PENALTY = 15;
+const REPEATED_CHARACTERS_PENALTY = 4;
+const LABEL_THRESHOLD_VERY_STRONG = 90;
+const LABEL_THRESHOLD_STRONG = 80;
+const LABEL_THRESHOLD_GOOD = 65;
+const LABEL_THRESHOLD_FAIR = 50;
+const LABEL_THRESHOLD_WEAK = 30;
+
 const COMMON_PASSWORDS = new Set([
   'password',
   'password123',
@@ -19,8 +41,11 @@ function normalize(value: string): string {
 }
 
 function hasRepeatedCharacters(password: string): boolean {
-  for (let index = 0; index < password.length - 2; index += 1) {
-    if (password[index] === password[index + 1] && password[index] === password[index + 2]) {
+  for (let index = 0; index < password.length - REPEATED_SEQUENCE_LENGTH + 1; index += 1) {
+    if (
+      password[index] === password[index + 1] &&
+      password[index] === password[index + 2]
+    ) {
       return true;
     }
   }
@@ -36,7 +61,9 @@ function containsUserInfo(password: string, username: string, email: string): bo
 
   const tokens = new Set([username, ...usernameTokens, emailLocalPart, ...emailTokens]);
 
-  return Array.from(tokens).some((token) => token.length >= 3 && normalizedPassword.includes(token));
+  return Array.from(tokens).some(
+    (token) => token.length >= MIN_USER_INFO_TOKEN_LENGTH && normalizedPassword.includes(token)
+  );
 }
 
 function isCommonPassword(password: string): boolean {
@@ -52,7 +79,7 @@ export function evaluatePasswordStrength(input: PasswordStrengthInput): Password
   const zxcvbnResult = zxcvbn(password, [normalizedUsername, normalizedEmail, username, email]);
 
   const checks = {
-    length: password.length >= 12,
+    length: password.length >= RECOMMENDED_PASSWORD_LENGTH,
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     number: /\d/.test(password),
@@ -60,44 +87,44 @@ export function evaluatePasswordStrength(input: PasswordStrengthInput): Password
     notCommon: !isCommonPassword(password) && !containsUserInfo(password, normalizedUsername, normalizedEmail)
   };
 
-  let score = zxcvbnResult.score * 16;
+  let score = zxcvbnResult.score * ZXCVM_SCORE_MULTIPLIER;
 
-  if (password.length >= 16) {
+  if (password.length >= STRONG_PASSWORD_LENGTH) {
     score += 8;
-  } else if (password.length >= 12) {
+  } else if (password.length >= RECOMMENDED_PASSWORD_LENGTH) {
     score += 6;
-  } else if (password.length >= 8) {
+  } else if (password.length >= MIN_PASSWORD_LENGTH) {
     score += 3;
   }
 
   if (checks.uppercase) {
-    score += 2;
+    score += UPPERCASE_SCORE;
   }
   if (checks.lowercase) {
-    score += 2;
+    score += LOWERCASE_SCORE;
   }
   if (checks.number) {
-    score += 2;
+    score += NUMBER_SCORE;
   }
   if (checks.symbol) {
-    score += 2;
+    score += SYMBOL_SCORE;
   }
 
   if (checks.notCommon) {
-    score += 5;
+    score += NOT_COMMON_SCORE;
   }
 
   if (containsUserInfo(password, normalizedUsername, normalizedEmail)) {
-    score -= 16;
+    score -= USER_INFO_PENALTY;
   }
   if (isCommonPassword(password)) {
-    score -= 15;
+    score -= COMMON_PASSWORD_PENALTY;
   }
   if (hasRepeatedCharacters(password)) {
-    score -= 4;
+    score -= REPEATED_CHARACTERS_PENALTY;
   }
 
-  score = Math.max(0, Math.min(100, score));
+  score = Math.max(SCORE_MIN, Math.min(SCORE_MAX, score));
 
   const feedback: string[] = [];
   if (zxcvbnResult.feedback.warning) {
@@ -108,8 +135,8 @@ export function evaluatePasswordStrength(input: PasswordStrengthInput): Password
       feedback.push(suggestion);
     }
   }
-  if (password.length < 8) {
-    feedback.push('Use at least 8 characters.');
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    feedback.push(`Use at least ${MIN_PASSWORD_LENGTH} characters.`);
   }
   if (!checks.uppercase) {
     feedback.push('Add at least one uppercase letter.');
@@ -136,15 +163,15 @@ export function evaluatePasswordStrength(input: PasswordStrengthInput): Password
   const uniqueFeedback = feedback.filter((item, index) => feedback.indexOf(item) === index);
 
   let label: PasswordStrengthLabel = 'very-weak';
-  if (score >= 90) {
+  if (score >= LABEL_THRESHOLD_VERY_STRONG) {
     label = 'very-strong';
-  } else if (score >= 80) {
+  } else if (score >= LABEL_THRESHOLD_STRONG) {
     label = 'strong';
-  } else if (score >= 65) {
+  } else if (score >= LABEL_THRESHOLD_GOOD) {
     label = 'good';
-  } else if (score >= 50) {
+  } else if (score >= LABEL_THRESHOLD_FAIR) {
     label = 'fair';
-  } else if (score >= 30) {
+  } else if (score >= LABEL_THRESHOLD_WEAK) {
     label = 'weak';
   }
 
