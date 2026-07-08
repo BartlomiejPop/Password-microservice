@@ -1,9 +1,5 @@
 # Kluczowe decyzje i założenia
 
-## Cel tego dokumentu
-
-Ten dokument opisuje najważniejsze decyzje architektoniczne i implementacyjne dla mikroserwisu oceny siły haseł. Wyjaśnia, dlaczego wybrano konkretne technologie, jak działa usługa oraz jakie założenia przyjęto podczas jej tworzenia.
-
 ## 1. Wybór technologii
 
 ### TypeScript
@@ -13,17 +9,14 @@ Ten dokument opisuje najważniejsze decyzje architektoniczne i implementacyjne d
 
 ### Fastify
 - wybrany jako lekki i szybki serwer HTTP
-- oferuje prosty model pluginów oraz wysoką wydajność w przypadku mikroserwisów
 - pozwala utrzymać warstwę transportu w prosty sposób i skupić się na obsłudze żądań i odpowiedzi
 
 ### Zod
 - używany do walidacji danych wejściowych dla żądań POST
 - zapewnia jasne reguły walidacji i spójne odpowiedzi błędów
-- poprawia czytelność kontraktu API i zapobiega dostarczaniu niepoprawnych danych do logiki biznesowej
 
 ### zxcvbn
-- używany jako baza do oceny siły hasła
-- dostarcza dojrzałe heurystyki dotyczące przewidywalności hasła, dopasowań do słowników i wzorców związanych z danymi użytkownika
+- dostarcza podstawowe zasady dotyczące przewidywalności hasła, dopasowań do słowników i wzorców związanych z danymi użytkownika
 - zwraca wynik punktowy oraz czytelne rekomendacje
 
 ### Docker
@@ -56,18 +49,13 @@ Serwis łączy wyniki zxcvbn z własnymi regułami, aby jednocześnie korzystać
 - src/app.ts – buduje instancję aplikacji Fastify
 - src/server.ts – uruchamia serwer i nasłuchuje na porcie 3000
 - src/routes/ – warstwa routingu i endpointów HTTP
-- src/routes/health/health.ts – endpoint zdrowia usługi
+- src/routes/health/health.ts – endpoint działania usługi
 - src/routes/password-strength/password-strength.ts – endpoint oceny siły hasła
 - src/services/passwordStrength/passwordStrength.ts – logika biznesowa oceny hasła
 - src/services/passwordStrength/passwordStrength.types.ts – typy używane przez usługę
 - src/**/*.test.ts – testy jednostkowe i integracyjne
 - Dockerfile i .dockerignore – konfiguracja kontenera
 - .github/workflows/ci.yml – automatyczne sprawdzanie projektu w CI
-
-### Rozdzielenie odpowiedzialności
-- logika biznesowa jest oddzielona od transportu HTTP
-- endpointy obsługują tylko żądania i odpowiedzi, a nie reguły oceny hasła
-- dzięki temu kod jest łatwiejszy do testowania i rozwijania
 
 ## 4. Endpointy
 
@@ -76,7 +64,7 @@ Serwis łączy wyniki zxcvbn z własnymi regułami, aby jednocześnie korzystać
 - przydatny dla orchestratorów, kontenerów i systemów monitoringowych
 - zwraca status działania oraz unikalny identyfikator żądania
 
-### POST /api/v1/password-strength
+### POST /passwordStrength
 - główny endpoint usługi
 - przyjmuje obiekt JSON zawierający:
   - username
@@ -110,7 +98,7 @@ Serwis łączy wyniki zxcvbn z własnymi regułami, aby jednocześnie korzystać
   - npm run build:docker – zbudowanie obrazu Docker
   - npm run dev:docker – uruchomienie usługi w kontenerze
 
-### Dlaczego Docker jest używany
+### Dlaczego Docker 
 - ułatwia przenoszenie aplikacji między środowiskami
 - zapewnia spójne środowisko uruchomieniowe lokalnie i w produkcji
 - ogranicza problemy zależne od konkretnej maszyny developera lub serwera
@@ -121,39 +109,17 @@ Serwis łączy wyniki zxcvbn z własnymi regułami, aby jednocześnie korzystać
 - workflow w .github/workflows/ci.yml uruchamia się przy pull requestach oraz pushach do gałęzi main/master
 - wykonuje instalację zależności, kompilację TypeScript oraz testy
 
-### Dlaczego CI jest ważne
-- automatycznie sprawdza, czy kod nadal się buduje i przechodzi testy
-- pozwala szybciej wykrywać błędy przed połączeniem zmian do głównej gałęzi
-- zwiększa pewność jakości kodu i ułatwia pracę zespołową
-
 ## 8. Poprawna historia commitów
 
 Historia commitów powinna być czytelna, uporządkowana i oparta na małych, logicznych zmianach.
 
 ### Zasady dobrej historii commitów
-- każdy commit powinien dotyczyć jednej konkretnej zmiany
-- komunikat commit message powinien mówić, co zostało zmienione i dlaczego
-- warto unikać commitów typu „fix”, „update” bez kontekstu
-- commit history powinno odzwierciedlać rozwój projektu krok po kroku
+- każdy commit  dotyczy jednej konkretnej zmiany
+- nazwy commitów opisują co zostało wprowadzone 
+- commity skategoryzowane są jako bugfix lub feature
+- commit history odzwierciedla rozwój projektu krok po kroku
 
-### Zalecany format komunikatów
-Najlepiej stosować prosty i spójny styl, np.:
-- feat: add password strength evaluation endpoint
-- fix: handle invalid email input in validation
-- refactor: extract scoring constants to dedicated config
-- test: add route tests for weak passwords
-- docs: translate decisions document to Polish
-- chore: update Docker configuration
-
-### Przykłady dobrych commitów
-- feat: add health endpoint for service readiness
-- feat: implement password strength scoring with zxcvbn
-- test: cover invalid payload validation for password-strength route
-- docs: document architecture decisions and deployment flow
-
-## 9. Wartość tego projektu
-
-Projekt jest wartościowy, ponieważ:
+## 9. Podsumowanie projektu
 - dostarcza reusable mikroserwis do oceny siły haseł
 - łączy sprawdzoną bibliotekę zxcvbn z własnymi regułami biznesowymi
 - jest zbudowany w nowoczesnym stosie TypeScript z jasną walidacją i feedbackiem
