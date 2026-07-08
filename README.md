@@ -2,6 +2,8 @@
 
 A small Fastify + TypeScript microservice that evaluates password strength and returns a score, a human-readable label and actionable feedback.
 
+all decisions are described in docs/decisions.md
+
 ## Endpoint
 
 POST /passwordStrength
@@ -87,15 +89,11 @@ The resulting score is mapped to a label:
 Build the image:
 
 ```bash
-docker build -t password-strength-microservice .
+npm run build:docker
 ```
 
 Run the container:
 
 ```bash
-docker run --rm -p 3000:3000 password-strength-microservice
+npm run dev:docker
 ```
-
-## Design notes
-
-The implementation keeps the evaluation logic pure and testable in [src/password-strength.ts](src/password-strength.ts), while the HTTP layer in [src/server.ts](src/server.ts) remains focused on validation and transport concerns.
